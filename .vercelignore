@@ -1,0 +1,11 @@
+server.js
+auth-routes.js
+products-routes.js
+settings-routes.js
+auth-middleware.js
+db-utils.js
+hash-password.js
+package.json
+products-data.json
+settings-data.json
+.env.example
