@@ -1,0 +1,67 @@
+[
+  {
+    "id": "tropic-bloom-pleated-skirt",
+    "name": "Tropic Bloom Pleated Skirt",
+    "price": 18000,
+    "category": "Bottoms",
+    "colors": ["Multicolour", "Black"],
+    "sizes": ["S", "M", "L", "XL"],
+    "badge": "BEST SELLER",
+    "description": "Flowing pleated midi skirt in a bold tropical floral print. Elastic waist, soft satin drape — pairs perfectly with a fitted top or knit.",
+    "image": "/uploads/products/tropic-skirt.jpg",
+    "inStock": true,
+    "createdAt": "2026-08-01T09:00:00.000Z"
+  },
+  {
+    "id": "butterfly-stone-two-piece-set",
+    "name": "Butterfly Stone Two-Piece Set",
+    "price": 35000,
+    "category": "Dresses & Sets",
+    "colors": ["Black"],
+    "sizes": ["S", "M", "L", "XL"],
+    "badge": "NEW IN",
+    "description": "Hand-set rhinestone butterflies across a relaxed boat-neck top and wide-leg pants. An owambe-ready set that turns heads.",
+    "image": "/uploads/products/butterfly-set.jpg",
+    "inStock": true,
+    "createdAt": "2026-08-02T09:00:00.000Z"
+  },
+  {
+    "id": "contrast-collar-top",
+    "name": "Contrast Collar Long Sleeve Top",
+    "price": 14000,
+    "category": "Tops",
+    "colors": ["Red", "White", "Black", "Pink"],
+    "sizes": ["S", "M", "L", "XL"],
+    "badge": "",
+    "description": "Fitted long-sleeve top with a crisp striped shirt collar built in — polished enough for work, sharp enough for a night out.",
+    "image": "/uploads/products/collar-top.jpg",
+    "inStock": true,
+    "createdAt": "2026-08-03T09:00:00.000Z"
+  },
+  {
+    "id": "ny-off-shoulder-tee",
+    "name": "NY Off-Shoulder Graphic Tee",
+    "price": 12500,
+    "category": "Tops",
+    "colors": ["White", "Red"],
+    "sizes": ["S", "M", "L", "XL"],
+    "badge": "",
+    "description": "Relaxed off-shoulder tee with a bold varsity graphic and a side ruche tie for a flattering fit.",
+    "image": "/uploads/products/ny-tee.jpg",
+    "inStock": true,
+    "createdAt": "2026-08-04T09:00:00.000Z"
+  },
+  {
+    "id": "varsity-29-knit-sweater",
+    "name": "Red Varsity \"29\" Knit Sweater",
+    "price": 16500,
+    "category": "Outerwear",
+    "colors": ["Red"],
+    "sizes": ["S", "M", "L", "XL"],
+    "badge": "",
+    "description": "Oversized knit sweater with a bold varsity number graphic and star patch — cozy layering with real presence.",
+    "image": "/uploads/products/varsity-sweater.jpg",
+    "inStock": true,
+    "createdAt": "2026-08-05T09:00:00.000Z"
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "businessName": "Oyibo Leggings",
+  "tagline": "LAGOS · WOMENSWEAR",
+  "heroKicker": "NEW SEASON DROP",
+  "heroHeadlineLine1": "Dress like the",
+  "heroHeadlineLine2": "woman you already are",
+  "heroSubtext": "Hand-picked dresses, tops, skirts and two-piece sets — styled for Lagos weather, church, work and every owambe in between.",
+  "brandBlurb": "Bold, feminine ready-to-wear for the woman who dresses like she means it.",
+  "aboutEyebrow": "OUR STORY",
+  "aboutHeading": "Style that travels from work to owambe",
+  "aboutPara1": "Oyibo Leggings started with one simple frustration: finding pieces that actually fit, in fabrics that survive Lagos heat, at prices that make sense. So we started sourcing them ourselves.",
+  "aboutPara2": "Today we curate a tight, deliberate rail — dresses, tops, skirts, leggings and two-piece sets — each one chosen because it looks as good in person as it does on the phone screen. Nothing is listed until we've seen the fabric, checked the stitching and tried the fit.",
+  "stats": [
+    { "value": "500+", "label": "Happy customers" },
+    { "value": "36", "label": "States delivered" },
+    { "value": "24h", "label": "Reply time" }
+  ],
+  "whatsappNumbers": ["+2348138751048", "+2348088207189", "+2348172845704"],
+  "primaryWhatsapp": "+2348138751048",
+  "hours": "Mon – Sat: 9:00 AM – 5:00 PM",
+  "address": "Shop FA11, Fulham Plaza, Balogun Market (opposite Oluwole Urban Mall), Lagos, Nigeria",
+  "email": "hello@oyiboleggings.com",
+  "instagram": "@oyiboleggings",
+  "facebook": "",
+  "deliveryInfo": "Same-day within Lagos, 2–4 days to every other state in Nigeria.",
+  "paymentInfo": "Bank transfer or cash on pickup — confirm details with us on WhatsApp before you pay.",
+  "features": [
+    { "icon": "sparkle", "title": "Hand-picked quality", "text": "Every piece checked for fit, fabric and finish before it reaches you." },
+    { "icon": "truck", "title": "Nationwide delivery", "text": "Same-day within Lagos, 2-4 days to every other state in Nigeria." },
+    { "icon": "heart", "title": "Personal styling", "text": "Send us your size and occasion — we'll pull the right looks for you." }
+  ],
+  "values": [
+    { "title": "Real fit", "text": "Sizes S–XXL with honest measurements, so what arrives is what you expected." },
+    { "title": "Fabric first", "text": "Breathable, well-finished materials that hold their shape after washing." },
+    { "title": "Personal service", "text": "You talk to a human. We help you style, size and reorder." }
+  ],
+  "categories": [
+    { "name": "Dresses & Sets", "text": "Two-piece sets and statement dresses" },
+    { "name": "Tops", "text": "Blouses, knits and off-shoulder styles" },
+    { "name": "Bottoms", "text": "Skirts, leggings and wide-leg pants" },
+    { "name": "Outerwear", "text": "Layering pieces with attitude" }
+  ]
+}
