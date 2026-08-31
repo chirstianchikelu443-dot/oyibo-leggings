@@ -2,15 +2,33 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+const {
+  checkRateLimit,
+  recordFailedAttempt,
+  resetAttempts,
+} = require("./rate-limit");
+const { logEvent } = require("./security-log");
+
 const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 const ADMIN_PASSWORD_PLAIN = process.env.ADMIN_PASSWORD;
 
-// POST /api/auth/login  { password }  -> { token }
+// POST /api/auth/login { password } -> { token }
 router.post("/login", async (req, res) => {
+  const ip = req.ip;
   const { password } = req.body || {};
+
+  const rate = checkRateLimit(ip);
+  if (!rate.allowed) {
+    logEvent("LOGIN_BLOCKED_RATE_LIMIT", { ip });
+    return res.status(429).json({
+      error: `Too many attempts. Try again in about ${Math.ceil(
+        rate.retryAfterSeconds / 60
+      )} minute(s).`,
+    });
+  }
 
   if (!password) {
     return res.status(400).json({ error: "Password is required." });
@@ -31,14 +49,19 @@ router.post("/login", async (req, res) => {
   }
 
   if (!ok) {
+    recordFailedAttempt(ip);
+    logEvent("LOGIN_FAILED", { ip });
     return res.status(401).json({ error: "Incorrect password." });
   }
+
+  resetAttempts(ip);
+  logEvent("LOGIN_SUCCESS", { ip });
 
   const token = jwt.sign({ role: "admin" }, JWT_SECRET, { expiresIn: "14d" });
   res.json({ token });
 });
 
-// GET /api/auth/verify  -> confirms a token is still valid
+// GET /api/auth/verify -> confirms a token is still valid
 router.get("/verify", (req, res) => {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
