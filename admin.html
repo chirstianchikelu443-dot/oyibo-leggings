@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oyibo Leggings — Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FAF5EE;--cream-alt:#F4E3D2;--maroon:#6E1B37;--maroon-dark:#4E1226;
+    --terracotta:#C1622E;--gold:#E3A83D;--ink:#2B211C;--ink-soft:#7A6C61;--line:#E9DCCB;
+    --white:#FFFFFF;--radius-md:14px;--radius-sm:10px;--serif:'Playfair Display',Georgia,serif;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;--danger:#B23A3A;--success:#3A7D44;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);line-height:1.5;}
+  h1,h2,h3{font-family:var(--serif);margin:0;}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 18px 80px;}
+  a{color:var(--maroon);}
+  .field{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-family:inherit;
+    font-size:.94rem;margin-bottom:12px;background:var(--white);color:var(--ink);}
+  textarea.field{min-height:90px;resize:vertical;}
+  label{font-size:.78rem;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;
+    border-radius:999px;font-weight:600;font-size:.9rem;border:1px solid transparent;background:var(--maroon);
+    color:var(--white);cursor:pointer;}
+  .btn:hover{opacity:.92;}
+  .btn-outline{background:transparent;border-color:var(--maroon);color:var(--maroon);}
+  .btn-danger{background:var(--danger);}
+  .btn-sm{padding:8px 14px;font-size:.82rem;}
+  .btn-block{width:100%;}
+  .card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius-md);padding:22px;margin-bottom:20px;}
+  .row{display:grid;gap:12px;}
+  @media(min-width:640px){.row-2{grid-template-columns:1fr 1fr;}.row-3{grid-template-columns:1fr 1fr 1fr;}}
+  .top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;
+    background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;}
+  .brand{font-family:var(--serif);color:var(--maroon);font-weight:700;font-size:1.2rem;}
+  .tabs{display:flex;gap:8px;margin:18px 0;flex-wrap:wrap;}
+  .tab-btn{padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:var(--white);
+    font-weight:600;font-size:.88rem;cursor:pointer;color:var(--ink);}
+  .tab-btn.active{background:var(--maroon);border-color:var(--maroon);color:var(--white);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+    padding:12px 20px;border-radius:10px;font-size:.88rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;}
+  .toast.show{opacity:1;}
+  .toast.error{background:var(--danger);}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-card{background:var(--white);border-radius:18px;padding:34px 28px;max-width:360px;width:100%;
+    border:1px solid var(--line);text-align:center;}
+  .login-card h1{color:var(--maroon);font-size:1.5rem;margin-bottom:6px;}
+  .login-card p{color:var(--ink-soft);font-size:.88rem;margin:0 0 20px;}
+  .error-msg{color:var(--danger);font-size:.85rem;margin:-4px 0 12px;min-height:1em;}
+  .product-row{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center;}
+  .product-row img{width:60px;height:72px;object-fit:cover;border-radius:8px;flex-shrink:0;background:var(--cream-alt);}
+  .product-row .info{flex:1;min-width:0;}
+  .product-row .info h3{font-size:.98rem;font-family:var(--sans);font-weight:600;}
+  .product-row .info span{color:var(--ink-soft);font-size:.82rem;}
+  .product-row .actions{display:flex;gap:8px;flex-shrink:0;}
+  .color-preview{width:100%;height:170px;object-fit:cover;border-radius:10px;margin-bottom:10px;background:var(--cream-alt);}
+  .form-title{margin-bottom:14px;font-size:1.15rem;}
+  .checkbox-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  .checkbox-row label{display:flex;align-items:center;gap:6px;font-weight:500;color:var(--ink);font-size:.88rem;margin:0;}
+  .hint{font-size:.78rem;color:var(--ink-soft);margin:-6px 0 12px;}
+  .logout-btn{background:none;border:none;color:var(--ink-soft);font-weight:600;font-size:.85rem;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <h1>Oyibo Leggings</h1>
+    <p>Admin panel — enter your password to manage products and site info.</p>
+    <form id="loginForm">
+      <input class="field" type="password" id="loginPassword" placeholder="Admin password" required autofocus>
+      <div class="error-msg" id="loginError"></div>
+      <button class="btn btn-block" type="submit">Log in</button>
+    </form>
+  </div>
+</div>
+
+<div id="adminScreen" style="display:none;">
+  <div class="top-bar">
+    <span class="brand">Oyibo Leggings · Admin</span>
+    <button class="btn btn-outline btn-sm" id="backupBtn" style="margin-right:10px;">Download backup</button>
+    <button class="logout-btn" id="logoutBtn">Log out</button>
+  </div>
+  <div class="wrap">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="products">Products</button>
+      <button class="tab-btn" data-tab="settings">Business info</button>
+    </div>
+
+    <!-- PRODUCTS PANEL -->
+    <div class="panel active" id="panel-products">
+      <div class="card">
+        <h2 class="form-title" id="productFormTitle">Add a product</h2>
+        <form id="productForm">
+          <input type="hidden" id="pId">
+          <label for="pImage">Photo</label>
+          <img class="color-preview" id="pImagePreview" style="display:none;">
+          <input class="field" type="file" id="pImage" accept="image/png, image/jpeg, image/webp">
+          <p class="hint" id="pImageHint">Photos are automatically resized and compressed in your browser before upload.</p>
+
+          <label for="pName">Product name</label>
+          <input class="field" type="text" id="pName" placeholder="e.g. Tropic Bloom Pleated Skirt" required>
+
+          <div class="row row-2">
+            <div>
+              <label for="pPrice">Price (₦)</label>
+              <input class="field" type="number" id="pPrice" placeholder="18000" required min="0">
+            </div>
+            <div>
+              <label for="pCategory">Category</label>
+              <select class="field" id="pCategory">
+                <option>Dresses & Sets</option>
+                <option>Tops</option>
+                <option>Bottoms</option>
+                <option>Outerwear</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row row-2">
+            <div>
+              <label for="pColors">Colours (comma separated)</label>
+              <input class="field" type="text" id="pColors" placeholder="Red, Black, White">
+            </div>
+            <div>
+              <label for="pBadge">Badge (optional)</label>
+              <select class="field" id="pBadge">
+                <option value="">None</option>
+                <option value="NEW IN">NEW IN</option>
+                <option value="BEST SELLER">BEST SELLER</option>
+              </select>
+            </div>
+          </div>
+
+          <label>Sizes available</label>
+          <div class="checkbox-row" id="pSizesRow">
+            <label><input type="checkbox" value="S" checked> S</label>
+            <label><input type="checkbox" value="M" checked> M</label>
+            <label><input type="checkbox" value="L" checked> L</label>
+            <label><input type="checkbox" value="XL" checked> XL</label>
+            <label><input type="checkbox" value="XXL"> XXL</label>
+          </div>
+
+          <label for="pDescription">Description</label>
+          <textarea class="field" id="pDescription" placeholder="Short, appealing description customers will see"></textarea>
+
+          <label style="display:flex;align-items:center;gap:8px;font-weight:500;color:var(--ink);">
+            <input type="checkbox" id="pInStock" checked> In stock
+          </label>
+
+          <div style="display:flex;gap:10px;margin-top:6px;">
+            <button class="btn" type="submit" id="pSubmitBtn">Add product</button>
+            <button class="btn btn-outline" type="button" id="pCancelEditBtn" style="display:none;">Cancel edit</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 class="form-title">Current products (<span id="productCount">0</span>)</h2>
+        <div id="productList"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings">
+      <form id="settingsForm">
+        <div class="card">
+          <h2 class="form-title">Contact & shop details</h2>
+          <label for="sWhatsapp1">WhatsApp / phone 1 (primary — used for order links)</label>
+          <input class="field" type="text" id="sWhatsapp1" placeholder="+234 813 875 1048">
+          <label for="sWhatsapp2">WhatsApp / phone 2</label>
+          <input class="field" type="text" id="sWhatsapp2" placeholder="+234 808 820 7189">
+          <label for="sWhatsapp3">WhatsApp / phone 3</label>
+          <input class="field" type="text" id="sWhatsapp3" placeholder="+234 817 284 5704">
+          <label for="sEmail">Email</label>
+          <input class="field" type="email" id="sEmail" placeholder="hello@oyiboleggings.com">
+          <label for="sInstagram">Instagram handle</label>
+          <input class="field" type="text" id="sInstagram" placeholder="@oyiboleggings">
+          <label for="sHours">Opening hours</label>
+          <input class="field" type="text" id="sHours" placeholder="Mon – Sat: 9:00 AM – 5:00 PM">
+          <label for="sAddress">Shop address</label>
+          <textarea class="field" id="sAddress" placeholder="Shop FA11, Fulham Plaza, Balogun Market..."></textarea>
+          <label for="sDelivery">Delivery info</label>
+          <textarea class="field" id="sDelivery"></textarea>
+          <label for="sPayment">Payment info</label>
+          <textarea class="field" id="sPayment"></textarea>
+        </div>
+
+        <div class="card">
+          <h2 class="form-title">Homepage content</h2>
+          <label for="sHeroLine1">Hero headline — line 1</label>
+          <input class="field" type="text" id="sHeroLine1">
+          <label for="sHeroLine2">Hero headline — line 2 (styled)</label>
+          <input class="field" type="text" id="sHeroLine2">
+          <label for="sHeroSubtext">Hero subtext</label>
+          <textarea class="field" id="sHeroSubtext"></textarea>
+          <label for="sBrandBlurb">Short brand tagline (used in menu & footer)</label>
+          <textarea class="field" id="sBrandBlurb"></textarea>
+          <label for="sAboutHeading">About heading</label>
+          <input class="field" type="text" id="sAboutHeading">
+          <label for="sAboutPara1">About paragraph 1</label>
+          <textarea class="field" id="sAboutPara1"></textarea>
+          <label for="sAboutPara2">About paragraph 2</label>
+          <textarea class="field" id="sAboutPara2"></textarea>
+        </div>
+
+        <button class="btn btn-block" type="submit">Save changes</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = "https://oyibo-leggings-api-v4.onrender.com/api"; // 👈 same value as in index.html
+const API_ORIGIN = API_BASE.replace(/\/api\/?$/, "");
+const TOKEN_KEY = "oyibo_admin_token";
+
+let settings = {};
+let products = [];
+let editingId = null;
+
+function token(){ return localStorage.getItem(TOKEN_KEY); }
+function authHeaders(){ return { Authorization: "Bearer " + token() }; }
+function showToast(msg, isError){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isError ? " error" : "");
+  setTimeout(()=> t.className = "toast", 2500);
+}
+function resolveImage(product){
+  if(!product.image) return "";
+  if(product.image.startsWith("data:") || product.image.startsWith("http")) return product.image;
+  return API_ORIGIN + product.image;
+}
+
+// ---------- Auth ----------
+async function checkAuth(){
+  if(!token()){ return false; }
+  try{
+    const res = await fetch(API_BASE + "/auth/verify", { headers: authHeaders() });
+    const data = await res.json();
+    return !!data.valid;
+  }catch{ return false; }
+}
+
+async function boot(){
+  const ok = await checkAuth();
+  if(ok){
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("adminScreen").style.display = "block";
+    await loadProducts();
+    await loadSettings();
+  } else {
+    document.getElementById("loginScreen").style.display = "flex";
+    document.getElementById("adminScreen").style.display = "none";
+  }
+}
+
+document.getElementById("loginForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const password = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
+  errEl.textContent = "";
+  try{
+    const res = await fetch(API_BASE + "/auth/login", {
+      method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || "Login failed.");
+    localStorage.setItem(TOKEN_KEY, data.token);
+    boot();
+  }catch(err){
+    errEl.textContent = err.message || "Could not reach the server. Is the backend running?";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  localStorage.removeItem(TOKEN_KEY);
+  boot();
+});
+
+document.getElementById("backupBtn").addEventListener("click", async ()=>{
+  try{
+    const res = await fetch(API_BASE + "/admin/backup", { headers: authHeaders() });
+    if(!res.ok) throw new Error("Could not create backup.");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `oyibo-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast("Backup downloaded");
+  }catch(err){
+    showToast(err.message, true);
+  }
+});
+
+// ---------- Tabs ----------
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+  });
+});
+
+// ---------- Image compression ----------
+let compressedBlob = null;
+document.getElementById("pImage").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = (ev) => { img.src = ev.target.result; };
+  img.onload = () => {
+    const maxDim = 1200;
+    let { width, height } = img;
+    if(width > maxDim || height > maxDim){
+      const ratio = Math.min(maxDim / width, maxDim / height);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+    canvas.toBlob((blob)=>{
+      compressedBlob = blob;
+      const preview = document.getElementById("pImagePreview");
+      preview.src = URL.createObjectURL(blob);
+      preview.style.display = "block";
+      document.getElementById("pImageHint").textContent =
+        `Compressed to ${(blob.size/1024).toFixed(0)} KB (from ${(file.size/1024).toFixed(0)} KB).`;
+    }, "image/jpeg", 0.75);
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---------- Products ----------
+async function loadProducts(){
+  const res = await fetch(API_BASE + "/products");
+  products = await res.json();
+  renderProductList();
+}
+
+function renderProductList(){
+  document.getElementById("productCount").textContent = products.length;
+  const list = document.getElementById("productList");
+  if(!products.length){
+    list.innerHTML = `<p style="color:var(--ink-soft);">No products yet — add your first one above.</p>`;
+    return;
+  }
+  list.innerHTML = products.map(p => `
+    <div class="product-row">
+      <img src="${resolveImage(p)}" alt="">
+      <div class="info">
+        <h3>${p.name}</h3>
+        <span>₦${Number(p.price).toLocaleString("en-NG")} · ${p.category}${p.inStock === false ? " · Out of stock" : ""}</span>
+      </div>
+      <div class="actions">
+        <button class="btn btn-outline btn-sm" data-edit="${p.id}">Edit</button>
+        <button class="btn btn-danger btn-sm" data-delete="${p.id}">Delete</button>
+      </div>
+    </div>
+  `).join("");
+  list.querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", ()=> startEdit(b.dataset.edit)));
+  list.querySelectorAll("[data-delete]").forEach(b => b.addEventListener("click", ()=> deleteProduct(b.dataset.delete)));
+}
+
+function startEdit(id){
+  const p = products.find(x => x.id === id);
+  if(!p) return;
+  editingId = id;
+  compressedBlob = null;
+  document.getElementById("productFormTitle").textContent = "Edit product";
+  document.getElementById("pSubmitBtn").textContent = "Save changes";
+  document.getElementById("pCancelEditBtn").style.display = "inline-flex";
+  document.getElementById("pName").value = p.name;
+  document.getElementById("pPrice").value = p.price;
+  document.getElementById("pCategory").value = p.category;
+  document.getElementById("pColors").value = (p.colors||[]).join(", ");
+  document.getElementById("pBadge").value = p.badge || "";
+  document.getElementById("pDescription").value = p.description || "";
+  document.getElementById("pInStock").checked = p.inStock !== false;
+  document.querySelectorAll("#pSizesRow input").forEach(cb => cb.checked = (p.sizes||[]).includes(cb.value));
+  const preview = document.getElementById("pImagePreview");
+  preview.src = resolveImage(p);
+  preview.style.display = p.image ? "block" : "none";
+  document.getElementById("pImageHint").textContent = "Upload a new photo only if you want to replace the current one.";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.getElementById("pCancelEditBtn").addEventListener("click", resetProductForm);
+
+function resetProductForm(){
+  editingId = null;
+  compressedBlob = null;
+  document.getElementById("productForm").reset();
+  document.getElementById("productFormTitle").textContent = "Add a product";
+  document.getElementById("pSubmitBtn").textContent = "Add product";
+  document.getElementById("pCancelEditBtn").style.display = "none";
+  document.getElementById("pImagePreview").style.display = "none";
+  document.getElementById("pImageHint").textContent = "Photos are automatically resized and compressed in your browser before upload.";
+  document.querySelectorAll("#pSizesRow input").forEach(cb => cb.checked = ["S","M","L","XL"].includes(cb.value));
+}
+
+document.getElementById("productForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const fd = new FormData();
+  fd.append("name", document.getElementById("pName").value.trim());
+  fd.append("price", document.getElementById("pPrice").value);
+  fd.append("category", document.getElementById("pCategory").value);
+  fd.append("colors", document.getElementById("pColors").value.split(",").map(s=>s.trim()).filter(Boolean).join(","));
+  fd.append("badge", document.getElementById("pBadge").value);
+  fd.append("description", document.getElementById("pDescription").value.trim());
+  fd.append("inStock", document.getElementById("pInStock").checked);
+  const sizes = [...document.querySelectorAll("#pSizesRow input:checked")].map(cb=>cb.value);
+  fd.append("sizes", sizes.join(","));
+  if(compressedBlob) fd.append("image", compressedBlob, "product.jpg");
+
+  const url = editingId ? `${API_BASE}/products/${editingId}` : `${API_BASE}/products`;
+  const method = editingId ? "PUT" : "POST";
+
+  try{
+    const res = await fetch(url, { method, headers: authHeaders(), body: fd });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || "Could not save product.");
+    showToast(editingId ? "Product updated" : "Product added");
+    resetProductForm();
+    await loadProducts();
+  }catch(err){
+    showToast(err.message, true);
+  }
+});
+
+async function deleteProduct(id){
+  if(!confirm("Delete this product? This can't be undone.")) return;
+  try{
+    const res = await fetch(`${API_BASE}/products/${id}`, { method: "DELETE", headers: authHeaders() });
+    if(!res.ok) throw new Error("Could not delete product.");
+    showToast("Product deleted");
+    await loadProducts();
+  }catch(err){
+    showToast(err.message, true);
+  }
+}
+
+// ---------- Settings ----------
+async function loadSettings(){
+  const res = await fetch(API_BASE + "/settings");
+  settings = await res.json();
+  const nums = settings.whatsappNumbers || [];
+  document.getElementById("sWhatsapp1").value = nums[0] || "";
+  document.getElementById("sWhatsapp2").value = nums[1] || "";
+  document.getElementById("sWhatsapp3").value = nums[2] || "";
+  document.getElementById("sEmail").value = settings.email || "";
+  document.getElementById("sInstagram").value = settings.instagram || "";
+  document.getElementById("sHours").value = settings.hours || "";
+  document.getElementById("sAddress").value = settings.address || "";
+  document.getElementById("sDelivery").value = settings.deliveryInfo || "";
+  document.getElementById("sPayment").value = settings.paymentInfo || "";
+  document.getElementById("sHeroLine1").value = settings.heroHeadlineLine1 || "";
+  document.getElementById("sHeroLine2").value = settings.heroHeadlineLine2 || "";
+  document.getElementById("sHeroSubtext").value = settings.heroSubtext || "";
+  document.getElementById("sBrandBlurb").value = settings.brandBlurb || "";
+  document.getElementById("sAboutHeading").value = settings.aboutHeading || "";
+  document.getElementById("sAboutPara1").value = settings.aboutPara1 || "";
+  document.getElementById("sAboutPara2").value = settings.aboutPara2 || "";
+}
+
+document.getElementById("settingsForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const nums = [
+    document.getElementById("sWhatsapp1").value.trim(),
+    document.getElementById("sWhatsapp2").value.trim(),
+    document.getElementById("sWhatsapp3").value.trim(),
+  ].filter(Boolean);
+
+  const payload = {
+    whatsappNumbers: nums,
+    primaryWhatsapp: nums[0] || "",
+    email: document.getElementById("sEmail").value.trim(),
+    instagram: document.getElementById("sInstagram").value.trim(),
+    hours: document.getElementById("sHours").value.trim(),
+    address: document.getElementById("sAddress").value.trim(),
+    deliveryInfo: document.getElementById("sDelivery").value.trim(),
+    paymentInfo: document.getElementById("sPayment").value.trim(),
+    heroHeadlineLine1: document.getElementById("sHeroLine1").value.trim(),
+    heroHeadlineLine2: document.getElementById("sHeroLine2").value.trim(),
+    heroSubtext: document.getElementById("sHeroSubtext").value.trim(),
+    brandBlurb: document.getElementById("sBrandBlurb").value.trim(),
+    aboutHeading: document.getElementById("sAboutHeading").value.trim(),
+    aboutPara1: document.getElementById("sAboutPara1").value.trim(),
+    aboutPara2: document.getElementById("sAboutPara2").value.trim(),
+  };
+
+  try{
+    const res = await fetch(API_BASE + "/settings", {
+      method: "PUT", headers: { "Content-Type":"application/json", ...authHeaders() }, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || "Could not save settings.");
+    settings = data;
+    showToast("Settings saved");
+  }catch(err){
+    showToast(err.message, true);
+  }
+});
+
+boot();
+</script>
+</body>
+</html>
