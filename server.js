@@ -30,7 +30,7 @@ if (!process.env.JWT_SECRET) {
 }
 if (!process.env.ADMIN_PASSWORD_HASH && !process.env.ADMIN_PASSWORD) {
   console.warn(
-    "\n⚠️ No ADMIN_PASSWORD or ADMIN_PASSWORD_HASH set. Admin login will not work until you set one as an environment variable.\n"
+    "\n⚠️  No ADMIN_PASSWORD or ADMIN_PASSWORD_HASH set. Admin login will not work until you set one as an environment variable.\n"
   );
 }
 
@@ -39,10 +39,7 @@ app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader(
-    "Permissions-Policy",
-    "geolocation=(), microphone=(), camera=()"
-  );
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
   next();
 });
 
@@ -96,13 +93,11 @@ app.get("/api/admin/backup", requireAdmin, async (req, res) => {
     logEvent("BACKUP_DOWNLOADED", { ip: req.ip });
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="oyibo-backup-${new Date() .toISOString() .slice(0, 10)}.json"`
+      `attachment; filename="oyibo-backup-${new Date().toISOString().slice(0, 10)}.json"`
     );
     res.json({ exportedAt: new Date().toISOString(), products, settings });
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Could not generate backup. " + err.message });
+    res.status(500).json({ error: "Could not generate backup. " + err.message });
   }
 });
 
@@ -114,9 +109,7 @@ app.use((err, req, res, next) => {
 // ---- make sure data files + seed images exist, then start listening ----
 async function start() {
   await ensureFile(path.join(__dirname, "products-data.json"), []);
-  await ensureFile(path.join(__dirname, "settings-data.json"), {
-    businessName: "Oyibo Leggings",
-  });
+  await ensureFile(path.join(__dirname, "settings-data.json"), { businessName: "Oyibo Leggings" });
   await copySeedImages();
 
   app.listen(PORT, () => {
