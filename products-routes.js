@@ -6,6 +6,8 @@ const fs = require("fs/promises");
 
 const { readJSON, writeJSON } = require("./db-utils");
 const { requireAdmin } = require("./auth-middleware");
+const { logEvent } = require("./security-log");
+const { backupBeforeWrite } = require("./backup-utils");
 
 const router = express.Router();
 
@@ -45,7 +47,10 @@ function parseListField(value) {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) return parsed;
     } catch {
-      return value.split(",").map((s) => s.trim()).filter(Boolean);
+      return value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
   }
   return [];
@@ -74,28 +79,55 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
     if (!body.name || !body.price) {
       return res.status(400).json({ error: "Name and price are required." });
     }
+    if (body.name.length > 150) {
+      return res.status(400).json({ error: "Product name is too long." });
+    }
+    if (body.description && body.description.length > 2000) {
+      return res.status(400).json({ error: "Description is too long." });
+    }
+    const price = Number(body.price);
+    if (!Number.isFinite(price) || price < 0 || price > 100000000) {
+      return res
+        .status(400)
+        .json({ error: "Price must be a valid positive number." });
+    }
 
     const id = slugify(body.name) + "-" + Date.now().toString(36);
 
     const product = {
       id,
       name: body.name,
-      price: Number(body.price) || 0,
+      price,
       category: body.category || "Tops",
       colors: parseListField(body.colors),
-      sizes: parseListField(body.sizes).length ? parseListField(body.sizes) : ["S", "M", "L", "XL"],
+      sizes: parseListField(body.sizes).length
+        ? parseListField(body.sizes)
+        : ["S", "M", "L", "XL"],
       badge: body.badge || "",
       description: body.description || "",
-      image: req.file ? `/uploads/products/${req.file.filename}` : body.imageUrl || "",
-      inStock: body.inStock === undefined ? true : body.inStock === "true" || body.inStock === true,
+      image: req.file
+        ? `/uploads/products/${req.file.filename}`
+        : body.imageUrl || "",
+      inStock:
+        body.inStock === undefined
+          ? true
+          : body.inStock === "true" || body.inStock === true,
       createdAt: new Date().toISOString(),
     };
 
+    await backupBeforeWrite(DATA_FILE);
     products.unshift(product);
     await writeJSON(DATA_FILE, products);
+    logEvent("PRODUCT_CREATED", {
+      ip: req.ip,
+      id: product.id,
+      name: product.name,
+    });
     res.status(201).json(product);
   } catch (err) {
-    res.status(500).json({ error: "Could not save the product. " + err.message });
+    res
+      .status(500)
+      .json({ error: "Could not save the product. " + err.message });
   }
 });
 
@@ -104,7 +136,8 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
     const products = await readJSON(DATA_FILE);
     const index = products.findIndex((p) => p.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: "Product not found." });
+    if (index === -1)
+      return res.status(404).json({ error: "Product not found." });
 
     const body = req.body || {};
     const existing = products[index];
@@ -115,17 +148,31 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
       name: body.name ?? existing.name,
       price: body.price !== undefined ? Number(body.price) : existing.price,
       category: body.category ?? existing.category,
-      colors: body.colors !== undefined ? parseListField(body.colors) : existing.colors,
-      sizes: body.sizes !== undefined ? parseListField(body.sizes) : existing.sizes,
+      colors:
+        body.colors !== undefined
+          ? parseListField(body.colors)
+          : existing.colors,
+      sizes:
+        body.sizes !== undefined ? parseListField(body.sizes) : existing.sizes,
       badge: body.badge ?? existing.badge,
       description: body.description ?? existing.description,
       inStock:
-        body.inStock === undefined ? existing.inStock : body.inStock === "true" || body.inStock === true,
-      image: req.file ? `/uploads/products/${req.file.filename}` : existing.image,
+        body.inStock === undefined
+          ? existing.inStock
+          : body.inStock === "true" || body.inStock === true,
+      image: req.file
+        ? `/uploads/products/${req.file.filename}`
+        : existing.image,
     };
 
+    await backupBeforeWrite(DATA_FILE);
     products[index] = updated;
     await writeJSON(DATA_FILE, products);
+    logEvent("PRODUCT_UPDATED", {
+      ip: req.ip,
+      id: updated.id,
+      name: updated.name,
+    });
 
     // Clean up the replaced image file (only if it was a locally-uploaded one, not a seed image)
     if (req.file && oldImage && oldImage.startsWith("/uploads/products/")) {
@@ -135,7 +182,9 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
 
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ error: "Could not update the product. " + err.message });
+    res
+      .status(500)
+      .json({ error: "Could not update the product. " + err.message });
   }
 });
 
@@ -143,10 +192,17 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
 router.delete("/:id", requireAdmin, async (req, res) => {
   const products = await readJSON(DATA_FILE);
   const index = products.findIndex((p) => p.id === req.params.id);
-  if (index === -1) return res.status(404).json({ error: "Product not found." });
+  if (index === -1)
+    return res.status(404).json({ error: "Product not found." });
 
+  await backupBeforeWrite(DATA_FILE);
   const [removed] = products.splice(index, 1);
   await writeJSON(DATA_FILE, products);
+  logEvent("PRODUCT_DELETED", {
+    ip: req.ip,
+    id: removed.id,
+    name: removed.name,
+  });
 
   if (removed.image && removed.image.startsWith("/uploads/products/")) {
     const imgPath = path.join(__dirname, removed.image);
