@@ -1,8 +1,7 @@
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
 const crypto = require("crypto");
-const fs = require("fs/promises");
+const cloudinary = require("cloudinary").v2;
 
 const { readJSON, writeJSON } = require("./db-utils");
 const { requireAdmin } = require("./auth-middleware");
@@ -11,25 +10,36 @@ const { backupBeforeWrite } = require("./backup-utils");
 
 const router = express.Router();
 
-const DATA_FILE = path.join(__dirname, "products-data.json");
-const UPLOAD_DIR = path.join(__dirname, "uploads", "products");
+// Was a file path before (path.join(__dirname, "products-data.json")).
+// Now it's just the Redis key db-utils.js stores/reads the product list under.
+const DATA_KEY = "products-data";
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "").toLowerCase() || ".jpg";
-    cb(null, `${Date.now()}-${crypto.randomBytes(4).toString("hex")}${ext}`);
-  },
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Files now go to memory (a Buffer), not local disk — then get streamed
+// straight to Cloudinary in the route handler below.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB — client already compresses before this
   fileFilter: (req, file, cb) => {
     if (/^image\/(jpeg|png|webp)$/.test(file.mimetype)) cb(null, true);
     else cb(new Error("Only JPG, PNG or WEBP images are allowed."));
   },
 });
+
+function uploadToCloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "oyibo-leggings/products" },
+      (err, result) => (err ? reject(err) : resolve(result))
+    );
+    stream.end(buffer);
+  });
+}
 
 function slugify(name) {
   return (
@@ -58,13 +68,13 @@ function parseListField(value) {
 
 // GET /api/products — public
 router.get("/", async (req, res) => {
-  const products = await readJSON(DATA_FILE);
+  const products = await readJSON(DATA_KEY);
   res.json(products);
 });
 
 // GET /api/products/:id — public
 router.get("/:id", async (req, res) => {
-  const products = await readJSON(DATA_FILE);
+  const products = await readJSON(DATA_KEY);
   const product = products.find((p) => p.id === req.params.id);
   if (!product) return res.status(404).json({ error: "Product not found." });
   res.json(product);
@@ -73,7 +83,7 @@ router.get("/:id", async (req, res) => {
 // POST /api/products — admin, multipart/form-data with optional "image" file
 router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const products = await readJSON(DATA_FILE);
+    const products = await readJSON(DATA_KEY);
     const body = req.body || {};
 
     if (!body.name || !body.price) {
@@ -94,6 +104,14 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 
     const id = slugify(body.name) + "-" + Date.now().toString(36);
 
+    let imageUrl = body.imageUrl || "";
+    let imagePublicId = "";
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      imageUrl = result.secure_url;
+      imagePublicId = result.public_id;
+    }
+
     const product = {
       id,
       name: body.name,
@@ -105,9 +123,8 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
         : ["S", "M", "L", "XL"],
       badge: body.badge || "",
       description: body.description || "",
-      image: req.file
-        ? `/uploads/products/${req.file.filename}`
-        : body.imageUrl || "",
+      image: imageUrl,
+      imagePublicId, // used later to clean up the Cloudinary asset on edit/delete
       inStock:
         body.inStock === undefined
           ? true
@@ -115,9 +132,9 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
       createdAt: new Date().toISOString(),
     };
 
-    await backupBeforeWrite(DATA_FILE);
+    await backupBeforeWrite(DATA_KEY);
     products.unshift(product);
-    await writeJSON(DATA_FILE, products);
+    await writeJSON(DATA_KEY, products);
     logEvent("PRODUCT_CREATED", {
       ip: req.ip,
       id: product.id,
@@ -134,14 +151,21 @@ router.post("/", requireAdmin, upload.single("image"), async (req, res) => {
 // PUT /api/products/:id — admin, multipart/form-data, image optional (replaces old one)
 router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
   try {
-    const products = await readJSON(DATA_FILE);
+    const products = await readJSON(DATA_KEY);
     const index = products.findIndex((p) => p.id === req.params.id);
     if (index === -1)
       return res.status(404).json({ error: "Product not found." });
 
     const body = req.body || {};
     const existing = products[index];
-    const oldImage = existing.image;
+
+    let imageUrl = existing.image;
+    let imagePublicId = existing.imagePublicId || "";
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      imageUrl = result.secure_url;
+      imagePublicId = result.public_id;
+    }
 
     const updated = {
       ...existing,
@@ -160,24 +184,22 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
         body.inStock === undefined
           ? existing.inStock
           : body.inStock === "true" || body.inStock === true,
-      image: req.file
-        ? `/uploads/products/${req.file.filename}`
-        : existing.image,
+      image: imageUrl,
+      imagePublicId,
     };
 
-    await backupBeforeWrite(DATA_FILE);
+    await backupBeforeWrite(DATA_KEY);
     products[index] = updated;
-    await writeJSON(DATA_FILE, products);
+    await writeJSON(DATA_KEY, products);
     logEvent("PRODUCT_UPDATED", {
       ip: req.ip,
       id: updated.id,
       name: updated.name,
     });
 
-    // Clean up the replaced image file (only if it was a locally-uploaded one, not a seed image)
-    if (req.file && oldImage && oldImage.startsWith("/uploads/products/")) {
-      const oldPath = path.join(__dirname, oldImage);
-      fs.unlink(oldPath).catch(() => {});
+    // Clean up the replaced image on Cloudinary (only if a new one was uploaded)
+    if (req.file && existing.imagePublicId) {
+      cloudinary.uploader.destroy(existing.imagePublicId).catch(() => {});
     }
 
     res.json(updated);
@@ -190,23 +212,22 @@ router.put("/:id", requireAdmin, upload.single("image"), async (req, res) => {
 
 // DELETE /api/products/:id — admin
 router.delete("/:id", requireAdmin, async (req, res) => {
-  const products = await readJSON(DATA_FILE);
+  const products = await readJSON(DATA_KEY);
   const index = products.findIndex((p) => p.id === req.params.id);
   if (index === -1)
     return res.status(404).json({ error: "Product not found." });
 
-  await backupBeforeWrite(DATA_FILE);
+  await backupBeforeWrite(DATA_KEY);
   const [removed] = products.splice(index, 1);
-  await writeJSON(DATA_FILE, products);
+  await writeJSON(DATA_KEY, products);
   logEvent("PRODUCT_DELETED", {
     ip: req.ip,
     id: removed.id,
     name: removed.name,
   });
 
-  if (removed.image && removed.image.startsWith("/uploads/products/")) {
-    const imgPath = path.join(__dirname, removed.image);
-    fs.unlink(imgPath).catch(() => {});
+  if (removed.imagePublicId) {
+    cloudinary.uploader.destroy(removed.imagePublicId).catch(() => {});
   }
 
   res.json({ success: true });
