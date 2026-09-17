@@ -1,38 +1,37 @@
-// Tiny JSON-file "database" helper.
-// Good enough for a single-shop admin panel with light traffic.
-// Writes are queued per-file so two quick saves can't corrupt the file.
+// JSON-store helper, backed by Upstash Redis (via Vercel's Storage integration)
+// instead of the local filesystem. Vercel's filesystem is read-only/ephemeral at
+// runtime, so any data written locally is lost on the next cold start or redeploy.
+// This keeps the exact same readJSON / writeJSON / ensureFile function signatures
+// as before — products-routes.js and settings-routes.js barely need to change.
 
-const fs = require("fs/promises");
-const path = require("path");
+const { Redis } = require("@upstash/redis");
 
-const queues = new Map();
+// If you provisioned storage via Vercel's dashboard (Storage tab -> Create
+// Database -> KV/Redis -> Connect to Project), it injects KV_REST_API_URL and
+// KV_REST_API_TOKEN automatically. If you created a DB directly on upstash.com
+// instead, swap these two env var names for UPSTASH_REDIS_REST_URL /
+// UPSTASH_REDIS_REST_TOKEN.
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
+});
 
-function withQueue(filePath, task) {
-  const prev = queues.get(filePath) || Promise.resolve();
-  const next = prev.then(task, task);
-  queues.set(filePath, next.catch(() => {}));
-  return next;
+// `key` replaces the old `filePath` argument — just a plain string identifier
+// now (e.g. "products-data", "settings-data"), not a filesystem path.
+
+async function readJSON(key) {
+  const data = await redis.get(key);
+  return data ?? [];
 }
 
-async function readJSON(filePath) {
-  const raw = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(raw);
+async function writeJSON(key, data) {
+  await redis.set(key, data);
 }
 
-async function writeJSON(filePath, data) {
-  return withQueue(filePath, async () => {
-    const tmpPath = filePath + ".tmp";
-    await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-    await fs.rename(tmpPath, filePath);
-  });
-}
-
-async function ensureFile(filePath, defaultValue) {
-  try {
-    await fs.access(filePath);
-  } catch {
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(defaultValue, null, 2), "utf-8");
+async function ensureFile(key, defaultValue) {
+  const existing = await redis.get(key);
+  if (existing === null || existing === undefined) {
+    await redis.set(key, defaultValue);
   }
 }
 
